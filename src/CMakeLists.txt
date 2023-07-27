@@ -4,6 +4,7 @@ set(INTERNAL_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src
     )
 
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 add_library(InfluxDB-BoostSupport OBJECT
     $<$<NOT:$<BOOL:${INFLUXCXX_WITH_BOOST}>>:NoBoostSupport.cxx>

@@ -65,12 +65,23 @@ namespace influxdb
         mPointBatch.clear();
     }
 
-    void InfluxDB::flushBatch()
+    void InfluxDB::flushBatch(bool flushAsync)
     {
-        if (mIsBatchingActivated && !mPointBatch.empty())
+        if( flushAsync )
         {
-            transmit(joinLineProtocolBatch());
-            mPointBatch.clear();
+            if (mIsBatchingActivated && !mPointBatch.empty())
+            {
+                transmit(joinLineProtocolBatch(), flushAsync);
+                mPointBatch.clear();
+            }
+        }
+        else
+        {
+            if (mIsBatchingActivated && !mPointBatch.empty())
+            {
+                transmit(joinLineProtocolBatch());
+                mPointBatch.clear();
+            }
         }
     }
 
@@ -100,9 +111,16 @@ namespace influxdb
         mGlobalTags += LineProtocol::EscapeStringElement(LineProtocol::ElementType::TagValue, value);
     }
 
-    void InfluxDB::transmit(std::string&& point)
+    void InfluxDB::transmit(std::string&& point, bool isAsync)
     {
-        mTransport->send(std::move(point));
+        if(isAsync)
+        {
+            mTransport->sendAsync(std::move(point));
+        }
+        else
+        {
+            mTransport->send(std::move(point));
+        }
     }
 
     void InfluxDB::write(Point&& point)

@@ -68,7 +68,7 @@ namespace influxdb
         void createDatabaseIfNotExists();
 
         /// Flushes points batched (this can also happens when buffer is full)
-        void flushBatch();
+        void flushBatch(bool flushAsync = false);
 
         /// \deprecated use \ref flushBatch() instead - will be removed in v0.8.0
         [[deprecated("Use flushBatch() instead - will be removed in v0.8.0")]] inline void flushBuffer()
@@ -111,7 +111,7 @@ namespace influxdb
         std::unique_ptr<Transport> mTransport;
 
         /// Transmits string over transport
-        void transmit(std::string&& point);
+        void transmit(std::string&& point, bool isAsync = false);
 
         /// List of global tags
         std::string mGlobalTags;

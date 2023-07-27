@@ -47,6 +47,10 @@ namespace influxdb::transports
         ///  \throw InfluxDBException	when send fails
         void send(std::string&& lineprotocol) override;
 
+        /// Sends point via HTTP POST using cpr's async flags
+        /// \throw InfluxDBException when send fails
+        void sendAsync(std::string&& lineprotocol) override;
+
         /// Queries database
         /// \throw InfluxDBException	when query fails
         std::string query(const std::string& query) override;

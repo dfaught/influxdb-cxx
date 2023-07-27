@@ -46,6 +46,11 @@ namespace influxdb
         /// Sends string blob
         virtual void send(std::string&& message) = 0;
 
+        virtual void sendAsync([[maybe_unused]] std::string&& lineprotocol)
+        {
+            throw InfluxDBException{"Async is not supported by the selected transport"};
+        }
+
         /// Sends request
         virtual std::string query([[maybe_unused]] const std::string& query)
         {

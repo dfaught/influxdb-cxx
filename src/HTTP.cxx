@@ -78,6 +78,7 @@ namespace influxdb::transports
     {
         session.SetTimeout(cpr::Timeout{std::chrono::seconds{10}});
         session.SetConnectTimeout(cpr::ConnectTimeout{std::chrono::seconds{10}});
+        session.SetVerifySsl( cpr::VerifySsl( false ) );
     }
 
     std::string HTTP::query(const std::string& query)
@@ -105,6 +106,16 @@ namespace influxdb::transports
 
         const auto response = session.Post();
         checkResponse(response);
+    }
+
+    void HTTP::sendAsync( std::string&& lineprotocol )
+    {
+        session.SetUrl(cpr::Url{endpointUrl + "/write"});
+        session.SetHeader(cpr::Header{{"Content-Type", "application/json"}});
+        session.SetParameters(cpr::Parameters{{"db", databaseName}});
+        session.SetBody(cpr::Body{lineprotocol});
+
+        session.PostAsync();
     }
 
     void HTTP::setProxy(const Proxy& proxy)

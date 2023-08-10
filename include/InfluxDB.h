@@ -53,6 +53,9 @@ namespace influxdb
         /// Constructor required valid transport
         explicit InfluxDB(std::unique_ptr<Transport> transport);
 
+        /// Sets the async flag.  If true async writing will be used if the protocol supports it.
+        void setAsync(bool isAsync);
+
         /// Writes a point
         /// \param point
         void write(Point&& point);
@@ -68,7 +71,7 @@ namespace influxdb
         void createDatabaseIfNotExists();
 
         /// Flushes points batched (this can also happens when buffer is full)
-        void flushBatch(bool flushAsync = false);
+        void flushBatch();
 
         /// \deprecated use \ref flushBatch() instead - will be removed in v0.8.0
         [[deprecated("Use flushBatch() instead - will be removed in v0.8.0")]] inline void flushBuffer()
@@ -107,11 +110,14 @@ namespace influxdb
         /// Points batch size
         std::size_t mBatchSize;
 
+        /// Use asynchronous write if the protocol supports
+        bool mIsAsync;
+
         /// Underlying transport UDP/HTTP/Unix socket
         std::unique_ptr<Transport> mTransport;
 
         /// Transmits string over transport
-        void transmit(std::string&& point, bool isAsync = false);
+        void transmit(std::string&& point);
 
         /// List of global tags
         std::string mGlobalTags;

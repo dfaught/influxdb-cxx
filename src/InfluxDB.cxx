@@ -40,6 +40,7 @@ namespace influxdb
         : mPointBatch{},
           mIsBatchingActivated{false},
           mBatchSize{0},
+          mIsAsync{false},
           mTransport(std::move(transport)),
           mGlobalTags{}
     {
@@ -65,23 +66,17 @@ namespace influxdb
         mPointBatch.clear();
     }
 
-    void InfluxDB::flushBatch(bool flushAsync)
+    void InfluxDB::setAsync(bool isAsync)
     {
-        if( flushAsync )
+        mIsAsync = isAsync;
+    }
+
+    void InfluxDB::flushBatch()
+    {
+        if (mIsBatchingActivated && !mPointBatch.empty())
         {
-            if (mIsBatchingActivated && !mPointBatch.empty())
-            {
-                transmit(joinLineProtocolBatch(), flushAsync);
-                mPointBatch.clear();
-            }
-        }
-        else
-        {
-            if (mIsBatchingActivated && !mPointBatch.empty())
-            {
-                transmit(joinLineProtocolBatch());
-                mPointBatch.clear();
-            }
+            transmit(joinLineProtocolBatch());
+            mPointBatch.clear();
         }
     }
 
@@ -111,9 +106,9 @@ namespace influxdb
         mGlobalTags += LineProtocol::EscapeStringElement(LineProtocol::ElementType::TagValue, value);
     }
 
-    void InfluxDB::transmit(std::string&& point, bool isAsync)
+    void InfluxDB::transmit(std::string&& point)
     {
-        if(isAsync)
+        if(mIsAsync)
         {
             mTransport->sendAsync(std::move(point));
         }

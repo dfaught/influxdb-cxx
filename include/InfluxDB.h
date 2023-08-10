@@ -56,6 +56,8 @@ namespace influxdb
         /// Sets the async flag.  If true async writing will be used if the protocol supports it.
         void setAsync(bool isAsync);
 
+        bool isAsync() const { return mIsAsync; }
+
         /// Writes a point
         /// \param point
         void write(Point&& point);

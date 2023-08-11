@@ -25,6 +25,7 @@
 /// \author Adam Wegrzynek <adam.wegrzynek@cern.ch>
 ///
 
+#include <iostream>
 #include "HTTP.h"
 #include "InfluxDBException.h"
 
@@ -116,7 +117,9 @@ namespace influxdb::transports
         session->SetParameters(cpr::Parameters{{"db", databaseName}});
         session->SetBody(cpr::Body{lineprotocol});
 
-        session->PostAsync();
+        auto resp = session->PostAsync();
+        auto result = resp.get();
+        std::cout << result.status_code << std::endl;
     }
 
     void HTTP::setProxy(const Proxy& proxy)

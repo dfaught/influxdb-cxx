@@ -76,17 +76,18 @@ namespace influxdb::transports
     HTTP::HTTP(const std::string& url)
         : endpointUrl(parseUrl(url)), databaseName(parseDatabaseName(url))
     {
-        session.SetTimeout(cpr::Timeout{std::chrono::seconds{10}});
-        session.SetConnectTimeout(cpr::ConnectTimeout{std::chrono::seconds{10}});
-        session.SetVerifySsl( cpr::VerifySsl( false ) );
+        session = std::make_shared<cpr::Session>();
+        session->SetTimeout(cpr::Timeout{std::chrono::seconds{10}});
+        session->SetConnectTimeout(cpr::ConnectTimeout{std::chrono::seconds{10}});
+        session->SetVerifySsl( cpr::VerifySsl( false ) );
     }
 
     std::string HTTP::query(const std::string& query)
     {
-        session.SetUrl(cpr::Url{endpointUrl + "/query"});
-        session.SetParameters(cpr::Parameters{{"db", databaseName}, {"q", query}});
+        session->SetUrl(cpr::Url{endpointUrl + "/query"});
+        session->SetParameters(cpr::Parameters{{"db", databaseName}, {"q", query}});
 
-        const auto response = session.Get();
+        const auto response = session->Get();
         checkResponse(response);
 
         return response.text;
@@ -94,47 +95,47 @@ namespace influxdb::transports
 
     void HTTP::setBasicAuthentication(const std::string& user, const std::string& pass)
     {
-        session.SetAuth(cpr::Authentication{user, pass, cpr::AuthMode::BASIC});
+        session->SetAuth(cpr::Authentication{user, pass, cpr::AuthMode::BASIC});
     }
 
     void HTTP::send(std::string&& lineprotocol)
     {
-        session.SetUrl(cpr::Url{endpointUrl + "/write"});
-        session.SetHeader(cpr::Header{{"Content-Type", "application/json"}});
-        session.SetParameters(cpr::Parameters{{"db", databaseName}});
-        session.SetBody(cpr::Body{lineprotocol});
+        session->SetUrl(cpr::Url{endpointUrl + "/write"});
+        session->SetHeader(cpr::Header{{"Content-Type", "application/json"}});
+        session->SetParameters(cpr::Parameters{{"db", databaseName}});
+        session->SetBody(cpr::Body{lineprotocol});
 
-        const auto response = session.Post();
+        const auto response = session->Post();
         checkResponse(response);
     }
 
     void HTTP::sendAsync( std::string&& lineprotocol )
     {
-        session.SetUrl(cpr::Url{endpointUrl + "/write"});
-        session.SetHeader(cpr::Header{{"Content-Type", "application/json"}});
-        session.SetParameters(cpr::Parameters{{"db", databaseName}});
-        session.SetBody(cpr::Body{lineprotocol});
+        session->SetUrl(cpr::Url{endpointUrl + "/write"});
+        session->SetHeader(cpr::Header{{"Content-Type", "application/json"}});
+        session->SetParameters(cpr::Parameters{{"db", databaseName}});
+        session->SetBody(cpr::Body{lineprotocol});
 
-        session.PostAsync();
+        session->PostAsync();
     }
 
     void HTTP::setProxy(const Proxy& proxy)
     {
-        session.SetProxies(cpr::Proxies{{"http", proxy.getProxy()}, {"https", proxy.getProxy()}});
+        session->SetProxies(cpr::Proxies{{"http", proxy.getProxy()}, {"https", proxy.getProxy()}});
 
         if (const auto& auth = proxy.getAuthentication(); auth.has_value())
         {
-            session.SetProxyAuth(cpr::ProxyAuthentication{{"http", cpr::EncodedAuthentication{auth->user, auth->password}},
+            session->SetProxyAuth(cpr::ProxyAuthentication{{"http", cpr::EncodedAuthentication{auth->user, auth->password}},
                                                           {"https", cpr::EncodedAuthentication{auth->user, auth->password}}});
         }
     }
 
     std::string HTTP::execute(const std::string& cmd)
     {
-        session.SetUrl(cpr::Url{endpointUrl + "/query"});
-        session.SetParameters(cpr::Parameters{{"db", databaseName}, {"q", cmd}});
+        session->SetUrl(cpr::Url{endpointUrl + "/query"});
+        session->SetParameters(cpr::Parameters{{"db", databaseName}, {"q", cmd}});
 
-        const auto response = session.Get();
+        const auto response = session->Get();
         checkResponse(response);
 
         return response.text;
@@ -142,10 +143,10 @@ namespace influxdb::transports
 
     void HTTP::createDatabase()
     {
-        session.SetUrl(cpr::Url{endpointUrl + "/query"});
-        session.SetParameters(cpr::Parameters{{"q", "CREATE DATABASE " + databaseName}});
+        session->SetUrl(cpr::Url{endpointUrl + "/query"});
+        session->SetParameters(cpr::Parameters{{"q", "CREATE DATABASE " + databaseName}});
 
-        const auto response = session.Post();
+        const auto response = session->Post();
         checkResponse(response);
     }
 

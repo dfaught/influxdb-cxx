@@ -43,6 +43,10 @@ namespace influxdb::transports
         /// Constructor
         explicit HTTP(const std::string& url);
 
+        HTTP(const std::string& url, bool enableAsync);
+
+        ~HTTP();
+
         /// Sends point via HTTP POST
         ///  \throw InfluxDBException	when send fails
         void send(std::string&& lineprotocol) override;
@@ -72,9 +76,14 @@ namespace influxdb::transports
         void setProxy(const Proxy& proxy) override;
 
     private:
+        void handleAsyncResult();
+
         std::string endpointUrl;
         std::string databaseName;
         std::shared_ptr<cpr::Session> session;
+        std::thread asyncResultHandler;
+        std::deque<cpr::AsyncResponse> respQueue;
+        std::atomic_bool processAsync {false};
     };
 
 } // namespace influxdb

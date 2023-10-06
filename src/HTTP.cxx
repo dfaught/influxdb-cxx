@@ -25,9 +25,13 @@
 /// \author Adam Wegrzynek <adam.wegrzynek@cern.ch>
 ///
 
-#include <iostream>
+#include <thread>
+#include <mutex>
+#include <chrono>
 #include "HTTP.h"
 #include "InfluxDBException.h"
+
+using namespace std::chrono_literals;
 
 namespace influxdb::transports
 {
@@ -73,6 +77,7 @@ namespace influxdb::transports
         }
     }
 
+    std::mutex asyncMtx;
 
     HTTP::HTTP(const std::string& url)
         : endpointUrl(parseUrl(url)), databaseName(parseDatabaseName(url))
@@ -81,6 +86,22 @@ namespace influxdb::transports
         session->SetTimeout(cpr::Timeout{std::chrono::seconds{10}});
         session->SetConnectTimeout(cpr::ConnectTimeout{std::chrono::seconds{10}});
         session->SetVerifySsl( cpr::VerifySsl( false ) );
+    }
+
+    HTTP::HTTP(const std::string& url, bool enableAsync)
+        : HTTP(url)
+    {
+        processAsync.store( enableAsync );
+        asyncResultHandler = std::thread([&](){ this->handleAsyncResult(); });
+    }
+
+    HTTP::~HTTP()
+    {
+        if(processAsync.load())
+        {
+            processAsync.store(false);
+            asyncResultHandler.join();
+        }
     }
 
     std::string HTTP::query(const std::string& query)
@@ -117,9 +138,36 @@ namespace influxdb::transports
         session->SetParameters(cpr::Parameters{{"db", databaseName}});
         session->SetBody(cpr::Body{lineprotocol});
 
-        auto resp = session->PostAsync();
-        auto result = resp.get();
-        std::cout << result.status_code << std::endl;
+        std::lock_guard<std::mutex> responseGuard(asyncMtx);
+        //NOTE The call to PostAsync returns a cpr::AsyncWrapper.  This call must be in the push in to the queue since
+        //cpr::AsyncWrapper explicitly deletes its copy constructor.
+        respQueue.push_back( session->PostAsync() );
+    }
+
+    void HTTP::handleAsyncResult()
+    {
+        while( processAsync.load() )
+        {
+            std::this_thread::sleep_for(100ms);
+
+            std::lock_guard<std::mutex> responseGuard(asyncMtx);
+            while( respQueue.size() > 0 )
+            {
+                respQueue.front().wait();
+                try
+                {
+                    checkResponse( respQueue.front().get() );
+                }
+                catch(const InfluxDBException& dbe)
+                {
+                   // TODO Logging callback?  Error list?  Out to stdout?
+                }
+
+                respQueue.pop_front();
+            }
+
+        }
+
     }
 
     void HTTP::setProxy(const Proxy& proxy)

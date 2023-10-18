@@ -28,6 +28,7 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <iostream>
 #include "HTTP.h"
 #include "InfluxDBException.h"
 
@@ -148,10 +149,10 @@ namespace influxdb::transports
     {
         while( processAsync.load() )
         {
-            std::this_thread::sleep_for(100ms);
+            std::this_thread::sleep_for(10ms);
 
             std::lock_guard<std::mutex> responseGuard(asyncMtx);
-            while( respQueue.size() > 0 )
+            while( processAsync.load() && respQueue.size() > 0 )
             {
                 respQueue.front().wait();
                 try
@@ -160,12 +161,14 @@ namespace influxdb::transports
                 }
                 catch(const InfluxDBException& dbe)
                 {
+                    std::cerr << dbe.what() << std::endl;
                    // TODO Logging callback?  Error list?  Out to stdout?
                 }
 
                 respQueue.pop_front();
             }
 
+            std::cout << "Resp queue clear" << std::endl;
         }
 
     }

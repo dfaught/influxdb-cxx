@@ -126,13 +126,20 @@ namespace influxdb::transports
 
     void HTTP::send(std::string&& lineprotocol)
     {
-        session->SetUrl(cpr::Url{endpointUrl + "/write"});
-        session->SetHeader(cpr::Header{{"Content-Type", "application/json"}});
-        session->SetParameters(cpr::Parameters{{"db", databaseName}});
-        session->SetBody(cpr::Body{lineprotocol});
+        if( processAsync.load() )
+        {
+            sendAsync(std::forward<decltype(lineprotocol)>(lineprotocol));
+        }
+        else
+        {
+            session->SetUrl(cpr::Url{endpointUrl + "/write"});
+            session->SetHeader(cpr::Header{{"Content-Type", "application/json"}});
+            session->SetParameters(cpr::Parameters{{"db", databaseName}});
+            session->SetBody(cpr::Body{lineprotocol});
 
-        const auto response = session->Post();
-        checkResponse(response);
+            const auto response = session->Post();
+            checkResponse(response);
+        }
     }
 
     void HTTP::sendAsync( std::string&& lineprotocol )
@@ -157,6 +164,7 @@ namespace influxdb::transports
             std::lock_guard<std::mutex> responseGuard(asyncMtx);
             while( processAsync.load() && respQueue.size() > 0 )
             {
+                std::cout << "Resp queue size: " << respQueue.size() << std::endl;
                 respQueue.front().wait();
                 try
                 {

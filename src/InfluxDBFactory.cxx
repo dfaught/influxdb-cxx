@@ -41,7 +41,7 @@ namespace influxdb
     {
         std::unique_ptr<Transport> withHttpTransport(const http::url& uri)
         {
-            auto transport = std::make_unique<transports::HTTP>(uri.url);
+            auto transport = std::make_unique<transports::HTTP>(uri.url, uri.isAsync);
             if (!uri.user.empty())
             {
                 transport->setBasicAuthentication(uri.user, uri.password);

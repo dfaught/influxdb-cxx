@@ -31,6 +31,7 @@ namespace http
     {
         std::string protocol, user, password, host, path, search, url;
         int port;
+        bool isAsync;
     };
 
 
@@ -105,6 +106,17 @@ namespace http
     {
         return HeadSlice(in, "@");
     }
+    static inline bool ExtractAsync(std::string& in)
+    {
+        auto asyncParam = TailSlice(in, "&");
+        auto strParamValue = TailSlice(asyncParam, "=");
+        if(std::string::npos == strParamValue.find("true"))
+        {
+            return true;
+        }
+
+        return false;
+    }
 
 
     //--- Public Interface -------------------------------------------------------------~
@@ -119,8 +131,9 @@ namespace http
         const auto user = userpass;
         const auto port = ExtractPort(in);
         const auto host = in;
+        const auto isAsync = ExtractAsync(in);
 
-        return {protocol, user, password, host, path, search, url, port};
+        return {protocol, user, password, host, path, search, url, port, isAsync};
     }
 }
 #endif

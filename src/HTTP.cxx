@@ -93,7 +93,10 @@ namespace influxdb::transports
         : HTTP(url)
     {
         processAsync.store( enableAsync );
-        asyncResultHandler = std::thread([&](){ this->handleAsyncResult(); });
+        if( enableAsync )
+        {
+            asyncResultHandler = std::thread([&](){ this->handleAsyncResult(); });
+        }
     }
 
     HTTP::~HTTP()

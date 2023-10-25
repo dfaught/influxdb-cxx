@@ -66,11 +66,6 @@ namespace influxdb
         mPointBatch.clear();
     }
 
-    void InfluxDB::setAsync(bool isAsync)
-    {
-        mIsAsync = isAsync;
-    }
-
     void InfluxDB::flushBatch()
     {
         if (mIsBatchingActivated && !mPointBatch.empty())
@@ -108,14 +103,7 @@ namespace influxdb
 
     void InfluxDB::transmit(std::string&& point)
     {
-        if(mIsAsync)
-        {
-            mTransport->sendAsync(std::move(point));
-        }
-        else
-        {
-            mTransport->send(std::move(point));
-        }
+        mTransport->send(std::move(point));
     }
 
     void InfluxDB::write(Point&& point)

@@ -53,11 +53,6 @@ namespace influxdb
         /// Constructor required valid transport
         explicit InfluxDB(std::unique_ptr<Transport> transport);
 
-        /// Sets the async flag.  If true async writing will be used if the protocol supports it.
-        void setAsync(bool isAsync);
-
-        bool isAsync() const { return mIsAsync; }
-
         /// Writes a point
         /// \param point
         void write(Point&& point);
@@ -111,9 +106,6 @@ namespace influxdb
 
         /// Points batch size
         std::size_t mBatchSize;
-
-        /// Use asynchronous write if the protocol supports
-        bool mIsAsync;
 
         /// Underlying transport UDP/HTTP/Unix socket
         std::unique_ptr<Transport> mTransport;

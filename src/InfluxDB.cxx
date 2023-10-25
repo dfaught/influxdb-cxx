@@ -40,7 +40,6 @@ namespace influxdb
         : mPointBatch{},
           mIsBatchingActivated{false},
           mBatchSize{0},
-          mIsAsync{false},
           mTransport(std::move(transport)),
           mGlobalTags{}
     {

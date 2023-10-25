@@ -121,9 +121,9 @@ namespace http
     //--- Public Interface -------------------------------------------------------------~
     static inline url ParseHttpUrl(std::string& in)
     {
+        const auto isAsync = ExtractAsync(in);
         const auto url = in;
         const auto protocol = ExtractProtocol(in);
-        const auto isAsync = ExtractAsync(in);
         const auto search = ExtractSearch(in);
         const auto path = ExtractPath(in);
         std::string userpass = ExtractUserpass(in);

@@ -109,8 +109,7 @@ namespace http
     static inline bool ExtractAsync(std::string& in)
     {
         auto asyncParam = TailSlice(in, "&");
-        auto strParamValue = TailSlice(asyncParam, "=");
-        if(std::string::npos == strParamValue.find("true"))
+        if(std::string::npos != asyncParam.find("true"))
         {
             return true;
         }
@@ -124,6 +123,7 @@ namespace http
     {
         const auto url = in;
         const auto protocol = ExtractProtocol(in);
+        const auto isAsync = ExtractAsync(in);
         const auto search = ExtractSearch(in);
         const auto path = ExtractPath(in);
         std::string userpass = ExtractUserpass(in);
@@ -131,7 +131,7 @@ namespace http
         const auto user = userpass;
         const auto port = ExtractPort(in);
         const auto host = in;
-        const auto isAsync = ExtractAsync(in);
+
 
         return {protocol, user, password, host, path, search, url, port, isAsync};
     }
